@@ -7,7 +7,7 @@ import logging
 class MyControllerMap:
     def __init__(self):
         self.button = {'A': 'L'} # Fast forward (10 seg) pro Youtube
-
+        self.button = {'B': 'M'} # Fast forward (10 seg) pro Youtube
 class SerialControllerInterface:
     # Protocolo
     # byte 1 -> Botão 1 (estado - Apertado 1 ou não 0)
@@ -29,11 +29,21 @@ class SerialControllerInterface:
         logging.debug("Received DATA: {}".format(data))
 
         if data == b'1':
-            logging.info("KEYDOWN A")
-            pyautogui.keyDown(self.mapping.button['A'])
+            data = self.ser.read()
+            if data == b'L':
+                logging.info("KEYDOWN A")
+                pyautogui.keyDown(self.mapping.button['A'])
+            if data == b'M':
+                logging.info("KEYDOWN B")
+                pyautogui.keyDown(self.mapping.button['B'])
+
         elif data == b'0':
             logging.info("KEYUP A")
             pyautogui.keyUp(self.mapping.button['A'])
+            logging.info("KEYDOWN B")
+            pyautogui.keyUp(self.mapping.button['B'])
+
+
 
         self.incoming = self.ser.read()
 

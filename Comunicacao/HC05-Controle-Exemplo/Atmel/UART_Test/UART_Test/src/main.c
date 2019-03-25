@@ -31,6 +31,14 @@
 #include <asf.h>
 #include <string.h>
 
+
+
+// defines do Botao de start
+#define BUTTSTART_PIO           PIOC
+#define BUTTSTART_PIO_ID        ID_PIOC
+#define BUTTSTART_PIO_IDX       17u
+#define BUTTSTART_PIO_IDX_MASK  (1u << BUTTSTART_PIO_IDX)
+
 // Descomente o define abaixo, para desabilitar o Bluetooth e utilizar modo Serial via Cabo
 //#define DEBUG_SERIAL
 
@@ -110,7 +118,7 @@ int hc05_server_init(void) {
 	char buffer_rx[128];
 	usart_send_command(USART0, buffer_rx, 1000, "AT", 1000);
 	usart_send_command(USART0, buffer_rx, 1000, "AT", 1000);	
-	usart_send_command(USART0, buffer_rx, 1000, "AT+NAMEServer", 1000);
+	usart_send_command(USART0, buffer_rx, 1000, "AT+NAMEMeiaBomba", 1000);
 	usart_log("hc05_server_init", buffer_rx);
 	usart_send_command(USART0, buffer_rx, 1000, "AT", 1000);
 	usart_send_command(USART0, buffer_rx, 1000, "AT+PIN0000", 1000);
@@ -133,20 +141,50 @@ int main (void)
 	hc05_server_init();
 	#endif
 	
+	
+	/////FAZER POR CALLBACK SO EDGE
+	pmc_enable_periph_clk(BUTTSTART_PIO_ID);
+	// configura pino ligado ao bot?o como entrada com um pull-up.
+	pio_set_input(BUTTSTART_PIO,BUTTSTART_PIO_IDX_MASK,PIO_DEFAULT);
+	// ativa pullup
+	pio_pull_up(BUTTSTART_PIO, BUTTSTART_PIO_IDX_MASK, 1);
+	
 	char button1 = '0';
-	char eof = 'X';
+	char eop = 'X';
+	char header1 = 'L';
+	char header2 = 'M';
+	char button2 = '0'; // Start Stream
 	char buffer[1024];
 	
 	while(1) {
 		if(pio_get(PIOA, PIO_INPUT, PIO_PA11) == 0) {
 			button1 = '1';
-		} else {
+			while(!usart_is_tx_ready(UART_COMM));
+			usart_write(UART_COMM, header1);
+			while(!usart_is_tx_ready(UART_COMM));
+			usart_write(UART_COMM, button1);
+			while(!usart_is_tx_ready(UART_COMM));
+			usart_write(UART_COMM,eop);
+		} 
+		
+		if(pio_get(BUTTSTART_PIO,PIO_INPUT ,BUTTSTART_PIO_IDX_MASK)==0){
+			button2 = '1';
+			while(!usart_is_tx_ready(UART_COMM));
+			usart_write(UART_COMM, header2);
+			while(!usart_is_tx_ready(UART_COMM));
+			usart_write(UART_COMM, button2);
+			while(!usart_is_tx_ready(UART_COMM));
+			usart_write(UART_COMM, eop);
+		}
+
+		else {
 			button1 = '0';
+			button2 = '0';
+			//while(!usart_is_tx_ready(UART_COMM));//wait
+			//usart_write(UART_COMM, 'W');
+		
 		}
 		
-		while(!usart_is_tx_ready(UART_COMM));
-		usart_write(UART_COMM, button1);
-		while(!usart_is_tx_ready(UART_COMM));
-		usart_write(UART_COMM, eof);
+		
 	}
 }

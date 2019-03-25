@@ -6,7 +6,8 @@ import pyvjoy # Windows apenas
 
 class MyControllerMap:
     def __init__(self):
-        self.button = {'A': 1}
+        self.button = {'A': 'L'} # Fast forward (10 seg) pro Youtube
+        self.button = {'B': 'M'} # Fast forward (10 seg) pro Youtube
 
 
 class SerialControllerInterface:
@@ -23,7 +24,7 @@ class SerialControllerInterface:
 
     def update(self):
         ## Sync protocol
-        while self.incoming != b'X':
+        while self.incoming != b'X' and self.incoming != b'S' :
             self.incoming = self.ser.read()
             logging.debug("Received INCOMING: {}".format(self.incoming))
 
@@ -32,9 +33,14 @@ class SerialControllerInterface:
 
         if data == b'1':
             logging.info("Sending press")
-            self.j.set_button(self.mapping.button['A'], 1)
+            if data == b'X':
+                self.j.set_button(self.mapping.button['A'], 1)
+            if data == b'S':
+                self.j.set_button(self.mapping.button['B'], 1)
         elif data == b'0':
             self.j.set_button(self.mapping.button['A'], 0)
+            self.j.set_button(self.mapping.button['B'], 0)
+
 
         self.incoming = self.ser.read()
 
