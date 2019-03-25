@@ -39,6 +39,11 @@
 #define BUTTSTART_PIO_IDX       17u
 #define BUTTSTART_PIO_IDX_MASK  (1u << BUTTSTART_PIO_IDX)
 
+#define BUTTSTART2_PIO           PIOC
+#define BUTTSTART2_PIO_ID        ID_PIOC
+#define BUTTSTART2_PIO_IDX       30u
+#define BUTTSTART2_PIO_IDX_MASK  (1u << BUTTSTART2_PIO_IDX)
+
 // Descomente o define abaixo, para desabilitar o Bluetooth e utilizar modo Serial via Cabo
 //#define DEBUG_SERIAL
 
@@ -50,6 +55,30 @@
 #endif
 
 volatile long g_systimer = 0;
+
+volatile Bool flag_b1 = false;
+volatile Bool flag_b2 = false;
+
+void butt1Callback(void){
+	flag_b1 = true;
+}
+
+void butt2Callback(void){
+	flag_b2 = true;
+}
+
+void pressed(char button, char header, char eop){
+	
+	while(!usart_is_tx_ready(UART_COMM));
+	usart_write(UART_COMM, button);
+	while(!usart_is_tx_ready(UART_COMM));
+	usart_write(UART_COMM, header);
+	while(!usart_is_tx_ready(UART_COMM));
+	usart_write(UART_COMM,eop);
+	flag_b1 = false;
+	flag_b2 = false;
+	
+}
 
 void SysTick_Handler() {
 	g_systimer++;
@@ -146,43 +175,74 @@ int main (void)
 	pmc_enable_periph_clk(BUTTSTART_PIO_ID);
 	// configura pino ligado ao bot?o como entrada com um pull-up.
 	pio_set_input(BUTTSTART_PIO,BUTTSTART_PIO_IDX_MASK,PIO_DEFAULT);
+	pio_set_input(BUTTSTART2_PIO,BUTTSTART2_PIO_IDX_MASK,PIO_DEFAULT);
+
 	// ativa pullup
 	pio_pull_up(BUTTSTART_PIO, BUTTSTART_PIO_IDX_MASK, 1);
+	pio_pull_up(BUTTSTART2_PIO, BUTTSTART2_PIO_IDX_MASK, 1);
+
+	
+	pio_handler_set(BUTTSTART_PIO, BUTTSTART_PIO_ID, BUTTSTART_PIO_IDX_MASK, PIO_IT_RISE_EDGE, butt1Callback);
+	pio_handler_set(BUTTSTART2_PIO, BUTTSTART2_PIO_ID, BUTTSTART2_PIO_IDX_MASK, PIO_IT_RISE_EDGE, butt2Callback);
+
+	
+	pio_enable_interrupt(BUTTSTART_PIO, BUTTSTART_PIO_IDX_MASK);
+	NVIC_EnableIRQ(BUTTSTART_PIO_ID);
+	NVIC_SetPriority(BUTTSTART_PIO_ID, 4);
+	
+	pio_enable_interrupt(BUTTSTART2_PIO, BUTTSTART2_PIO_IDX_MASK);
+	NVIC_EnableIRQ(BUTTSTART2_PIO_ID);
+	NVIC_SetPriority(BUTTSTART2_PIO_ID, 4);
+	
 	
 	char button1 = '0';
+	char button2 = '0'; 
+
 	char eop = 'X';
 	char header1 = 'L';
 	char header2 = 'M';
-	char button2 = '0'; // Start Stream
 	char buffer[1024];
 	
 	while(1) {
-		if(pio_get(PIOA, PIO_INPUT, PIO_PA11) == 0) {
-			button1 = '1';
-			while(!usart_is_tx_ready(UART_COMM));
-			usart_write(UART_COMM, header1);
-			while(!usart_is_tx_ready(UART_COMM));
-			usart_write(UART_COMM, button1);
-			while(!usart_is_tx_ready(UART_COMM));
-			usart_write(UART_COMM,eop);
-		} 
-		
-		if(pio_get(BUTTSTART_PIO,PIO_INPUT ,BUTTSTART_PIO_IDX_MASK)==0){
-			button2 = '1';
-			while(!usart_is_tx_ready(UART_COMM));
-			usart_write(UART_COMM, header2);
-			while(!usart_is_tx_ready(UART_COMM));
-			usart_write(UART_COMM, button2);
-			while(!usart_is_tx_ready(UART_COMM));
-			usart_write(UART_COMM, eop);
+// 		if(pio_get(PIOA, PIO_INPUT, PIO_PA11) == 0) {
+// 			button1 = '1';
+// 			
+// 			while(!usart_is_tx_ready(UART_COMM));
+// 			usart_write(UART_COMM, button1);
+// 			while(!usart_is_tx_ready(UART_COMM));
+// 			usart_write(UART_COMM, header1);
+// 			while(!usart_is_tx_ready(UART_COMM));
+// 			usart_write(UART_COMM,eop);
+// 		} 
+// 		
+// 		if(pio_get(BUTTSTART_PIO,PIO_INPUT ,BUTTSTART_PIO_IDX_MASK)==0){
+// 			button2 = '1';
+// 		
+// 			while(!usart_is_tx_ready(UART_COMM));
+// 			usart_write(UART_COMM, button2);
+// 			while(!usart_is_tx_ready(UART_COMM));
+// 			usart_write(UART_COMM, header2);
+// 			while(!usart_is_tx_ready(UART_COMM));
+// 			usart_write(UART_COMM, eop);
+// 		}
+// 
+// 		else {
+// 			button1 = '0';
+// 			button2 = '0';
+// 			//while(!usart_is_tx_ready(UART_COMM));//wait
+// 			//usart_write(UART_COMM, 'W');
+// 		
+// 		}
+		if(flag_b1){
+			pressed('1', header1, eop);
 		}
-
-		else {
-			button1 = '0';
-			button2 = '0';
-			//while(!usart_is_tx_ready(UART_COMM));//wait
-			//usart_write(UART_COMM, 'W');
+		else if(flag_b2){
+			pressed('1', header2, eop);
+		}
 		
+		else{
+			button1 = '0';
+			button2 = '0';	
 		}
 		
 		
