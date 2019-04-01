@@ -240,6 +240,8 @@ int main (void)
 			pressed('1', header2, eop);
 		}
 		
+		//if usart_get_string(UART_COMM, buffer, 256, 100);
+		
 		else{
 			button1 = '0';
 			button2 = '0';	

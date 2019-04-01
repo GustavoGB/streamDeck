@@ -4,9 +4,26 @@ import argparse
 import time
 import logging
 
+from urllib.request import urlopen
+import requests
+import json
+import threading
+import time
+
+
+
+def is_live_stream():
+    url = "https://api.twitch.tv/kraken/streams/veguinho98?client_id=uf2ck23nxqeaohmgy79zamz0p65o1e"
+
+    streamer_html = requests.get(url)
+    streamer = json.loads(streamer_html.content)
+    time.sleep(1)
+    print(streamer["stream"])
+    return streamer["stream"] is not None
+
 class MyControllerMap:
 	def __init__(self):
-		self.button = {'A':'Ctrl','B': 'M'} # Fast forward (10 seg) pro Youtube
+		self.button = {'A':['ctrl','s'],'B': 'M'} # Fast forward (10 seg) pro Youtube
 	  # Fast forward (10 seg) pro Youtube
 class SerialControllerInterface:
 	# Protocolo   sssddsMMMMMssMM
@@ -25,6 +42,7 @@ class SerialControllerInterface:
 			self.incoming = self.ser.read()
 			logging.debug("Received INCOMING: {}".format(self.incoming))
 
+			self.ser.write("dwadaddawdwa")
 		data = self.ser.read()
 		logging.debug("Received DATA: {}".format(data))
 
@@ -32,14 +50,14 @@ class SerialControllerInterface:
 			data = self.ser.read()
 			if data == b'L':
 				logging.info("KEYDOWN A")
-				pyautogui.hotkey(self.mapping.button['A'])
+				pyautogui.hotkey('ctrl','s')
 			if data == b'M':
 				logging.info("KEYDOWN B")
 				pyautogui.keyDown(self.mapping.button['B'])
 
 		elif data == b'0':
 			logging.info("KEYUP A")
-			pyautogui.keyUp(self.mapping.button['A'])
+			pyautogui.keyUp('ctrl','s')
 			logging.info("KEYDOWN B")
 			pyautogui.keyUp(self.mapping.button['B'])
 
@@ -68,6 +86,7 @@ if __name__ == '__main__':
 	argparse.add_argument('-c', '--controller_interface', type=str, default='serial', choices=interfaces)
 	argparse.add_argument('-d', '--debug', default=False, action='store_true')
 	args = argparse.parse_args()
+
 	if args.debug:
 		logging.basicConfig(level=logging.DEBUG)
 
@@ -78,4 +97,5 @@ if __name__ == '__main__':
 		controller = SerialControllerInterface(port=args.serial_port, baudrate=args.baudrate)
 
 	while True:
+		threading.Thread(target=is_live_stream).start()
 		controller.update()
