@@ -23,7 +23,7 @@ def is_live_stream():
 
 class MyControllerMap:
 	def __init__(self):
-		self.button = {'A':['ctrl','s'],'B': 'M'} # Fast forward (10 seg) pro Youtube
+		self.button = {'A':['command','s'],'B': 'M'} # Fast forward (10 seg) pro Youtube
 	  # Fast forward (10 seg) pro Youtube
 class SerialControllerInterface:
 	# Protocolo   sssddsMMMMMssMM
@@ -37,12 +37,11 @@ class SerialControllerInterface:
 		pyautogui.PAUSE = 0  ## remove delay
 	
 	def update(self):
-		## Sync protocolMMMMMMMMMMMMMMMMMMMMMMMMMMM
+		## Sync protocolMMMMMMMMMMMMMMMMMMMMMMMMMMMghfghfghMMMMMMMMMMMMMMMMMMMMMMMM
 		while self.incoming != b'X':
 			self.incoming = self.ser.read()
 			logging.debug("Received INCOMING: {}".format(self.incoming))
 
-			self.ser.write("dwadaddawdwa")
 		data = self.ser.read()
 		logging.debug("Received DATA: {}".format(data))
 
