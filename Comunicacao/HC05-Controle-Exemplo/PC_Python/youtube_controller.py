@@ -3,6 +3,7 @@ import serial
 import argparse
 import time
 import logging
+import osascript
 
 from urllib.request import urlopen
 import requests
@@ -23,7 +24,7 @@ def is_live_stream():
 
 class MyControllerMap:
 	def __init__(self):
-		self.button = {'A':['command','s'],'B': 'M'} # Fast forward (10 seg) pro Youtube
+		self.button = {'A':['ctrl','s'],'B': 'M', 'V':'A'} # Fast forward (10 seg) pro Youtube
 	  # Fast forward (10 seg) pro Youtube
 class SerialControllerInterface:
 	# Protocolo   sssddsMMMMMssMM
@@ -37,7 +38,7 @@ class SerialControllerInterface:
 		pyautogui.PAUSE = 0  ## remove delay
 	
 	def update(self):
-		## Sync protocolMMMMMMMMMMMMMMMMMMMMMMMMMMMghfghfghMMMMMMMMMMMMMMMMMMMMMMMM
+		## Sync protocol
 		while self.incoming != b'X':
 			self.incoming = self.ser.read()
 			logging.debug("Received INCOMING: {}".format(self.incoming))
@@ -54,13 +55,22 @@ class SerialControllerInterface:
 				logging.info("KEYDOWN B")
 				pyautogui.keyDown(self.mapping.button['B'])
 
+		if data == b'A':
+			data = self.ser.read()
+			for k in range(3):
+				data += self.ser.read()
+			logging.info("KEYDOWN V")
+			print("diminuindo volume")
+			print("set volume output volume " + data.decode("utf-8"))
+			data = int(data.decode("utf-8"))
+			data = str(100*(int(data)/4095))
+			osascript.osascript("set volume output volume " + data)
+
 		elif data == b'0':
 			logging.info("KEYUP A")
 			pyautogui.keyUp('ctrl','s')
-			logging.info("KEYDOWN B")
+			logging.info("KEYUP B")
 			pyautogui.keyUp(self.mapping.button['B'])
-
-
 
 		self.incoming = self.ser.read()
 

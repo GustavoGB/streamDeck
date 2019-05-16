@@ -371,7 +371,7 @@ int main (void)
 		if (g1_is_conversion_done == true){
 			g1_is_conversion_done = false;
 			
- 			if(ad_old != pot_ul_value)
+ 			if(ad_old < pot_ul_value*0.9 || ad_old > pot_ul_value*1.1)
 				mandaAnalogico(pot_ul_value, 'X');
 			ad_old = pot_ul_value;
 				
