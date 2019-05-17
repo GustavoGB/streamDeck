@@ -46,6 +46,11 @@
 #define BUTTSTART2_PIO_IDX       30u
 #define BUTTSTART2_PIO_IDX_MASK  (1u << BUTTSTART2_PIO_IDX)
 
+#define LED_VERDE_PIO           PIOD               // periferico que controla o LED
+#define LED_VERDE_PIO_ID        ID_PIOD               // ID do periférico PIOC (controla LED)
+#define LED_VERDE_PIO_IDX       21u                   // ID do LED no PIO
+#define LED_VERDE_PIO_IDX_MASK  (1u << LED_VERDE_PIO_IDX)  // Mascara para CONTROLARMOS o LED
+
 #define AFEC_CHANNEL_POT_SENSOR 8 //PA19
 
 /** Reference voltage for AFEC,in mv. */
@@ -63,6 +68,8 @@ volatile uint32_t pot_ul_value = 0;
 // Descomente o define abaixo, para desabilitar o Bluetooth e utilizar modo Serial via Cabo
 //#define DEBUG_SERIAL
 
+void usart_log(char* name, char* log);
+void usart_put_string(Usart *usart, char str[]);
 
 #ifdef DEBUG_SERIAL
 #define UART_COMM USART1
@@ -75,7 +82,7 @@ volatile long g_systimer = 0;
 volatile Bool flag_b1 = false;
 volatile Bool flag_b2 = false;
 
-volatile bool g1_is_conversion_done = false;
+volatile Bool g1_is_conversion_done = false;
 
 
 void butt1Callback(void){
@@ -115,6 +122,16 @@ void mandaAnalogico(int valor ,char eop){
 	while(!usart_is_tx_ready(UART_COMM));
 	usart_write(UART_COMM,eop);
 
+}
+
+char recebe_status_stream(){
+	char buffer[32];
+	char status;
+	if(!usart_read(UART_COMM, &status)){
+		//sprintf(buffer, "dado: %d", status);
+		//usart_put_string(USART1, buffer);
+	}
+	return status;
 }
 
 void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
@@ -321,6 +338,9 @@ int main (void)
 	
 	/////FAZER POR CALLBACK SO EDGE
 	pmc_enable_periph_clk(BUTTSTART_PIO_ID);
+	pmc_enable_periph_clk(LED_VERDE_PIO_ID);
+
+	pio_set_output(LED_VERDE_PIO, LED_VERDE_PIO_IDX_MASK, 0, 0, 0);
 
 	pio_set_input(BUTTSTART_PIO,BUTTSTART_PIO_IDX_MASK,PIO_DEFAULT);
 	pio_set_input(BUTTSTART2_PIO,BUTTSTART2_PIO_IDX_MASK,PIO_DEFAULT);
@@ -350,10 +370,11 @@ int main (void)
 	char header2 = 'M';
 	char buffer[1024];
 	int ad_old;
+	char status_stream;
 	
 	config_POT();
 	afec_start_software_conversion(AFEC0);
-	TC_init(TC0, ID_TC1, 1, 1);
+	TC_init(TC0, ID_TC1, 1, 4);
 		
 	while(1) {
 		if(flag_b1){
@@ -371,10 +392,20 @@ int main (void)
 		if (g1_is_conversion_done == true){
 			g1_is_conversion_done = false;
 			
- 			if(ad_old < pot_ul_value*0.9 || ad_old > pot_ul_value*1.1)
+ 			if(ad_old < pot_ul_value*0.95 || ad_old > pot_ul_value*1.05)
 				mandaAnalogico(pot_ul_value, 'X');
 			ad_old = pot_ul_value;
-				
 		}
+		
+		status_stream = recebe_status_stream();
+		
+		if(status_stream == 'L'){
+			pio_set(LED_VERDE_PIO, LED_VERDE_PIO_IDX_MASK); // Coloca 1 no pino LED verde
+
+		}
+		else if (status_stream == 'N'){
+			pio_clear(LED_VERDE_PIO, LED_VERDE_PIO_IDX_MASK); // Coloca 0 no pino LED verde
+
+		}	
 	}
 }
