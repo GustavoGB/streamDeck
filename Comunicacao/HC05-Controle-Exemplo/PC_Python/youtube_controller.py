@@ -11,6 +11,8 @@ import json
 import threading
 import time
 
+global status_check_stream
+
 ser = serial.Serial("/dev/cu.BOLHA1-DevB", baudrate=9600)
 
 super
@@ -27,6 +29,7 @@ def is_live_stream():
 		else:
 			ser.write(b'N')
 			print("NAO ESTA LIVE (N)")
+		status_check_stream = 0
 
 
 class MyControllerMap:
@@ -110,6 +113,9 @@ if __name__ == '__main__':
 	else:
 		controller = SerialControllerInterface(port=args.serial_port, baudrate=args.baudrate)
 
+	status_check_stream = 0
 	while True:
-		threading.Thread(target=is_live_stream).start()
+		if(status_check_stream == 0):
+			status_check_stream = 1
+			threading.Thread(target=is_live_stream).start()
 		controller.update()
