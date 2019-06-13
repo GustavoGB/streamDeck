@@ -24,8 +24,10 @@ def is_live_stream():
 		time.sleep(5)
 		#MANDA STATUS DA LIVE
 		if streamer["stream"] is not None:
+
 			print("ESTA LIVE (L)")
 		else:
+            
 			print("NAO ESTA LIVE (N)")
 		status_check_stream = 0
 

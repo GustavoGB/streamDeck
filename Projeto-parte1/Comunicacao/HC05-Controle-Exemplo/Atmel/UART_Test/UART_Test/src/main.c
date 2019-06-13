@@ -176,7 +176,6 @@ void TC1_Handler(void){
 	UNUSED(ul_dummy);
 	afec_channel_enable(AFEC0, AFEC_CHANNEL_POT_SENSOR);
 	afec_start_software_conversion(AFEC0);
-
 }
 void SysTick_Handler() {
 	g_systimer++;

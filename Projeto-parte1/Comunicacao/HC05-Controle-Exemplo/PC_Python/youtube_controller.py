@@ -13,7 +13,7 @@ import time
 
 global status_check_stream
 
-ser = serial.Serial("/dev/cu.BOLHA1-DevB", baudrate=9600)
+ser = serial.Serial("/dev/tty.BOLHA1-DevB-10", baudrate=9600)
 
 super
 def is_live_stream():
