@@ -5,7 +5,7 @@ Projeto 1 para Computação Embarcada
     - 5 botoes
     - caixinha
     - fita de led rgb (monocromatica)
-    - Barrinha de LED - viwers (7 seg) ou tempo de gravação
+    - Barrinha de LED - barrinha de viewers 
     
 - B (+2 itens)
 - A (+2 itens)
